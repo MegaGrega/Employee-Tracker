@@ -39,19 +39,19 @@ function runSearch() {
         .then(function (answer) {
             switch (answer.action) {
                 case "Add Department":
-                    console.log("Branch Not Complete");
+                    addDepartment();
                     break;
 
                 case "View Departments":
-                    console.log("Branch Not Complete");
+                    viewDepartments();
                     break;
 
                 case "Add Role":
-                    console.log("Branch Not Complete");
+                    addRole();
                     break;
 
                 case "View Roles":
-                    console.log("Branch Not Complete");
+                    viewRoles();
                     break;
 
                 case "Add Employee":
@@ -68,3 +68,77 @@ function runSearch() {
             }
         });
 }
+
+function addDepartment() {
+    inquirer
+        .prompt({
+            name: "department",
+            type: "input",
+            message: "New Department Name: "
+        })
+        .then(function (answer) {
+            var query = `INSERT INTO department(name) VALUES(?)`;
+            connection.query(query, `${answer.department}`, function (err, res) {
+                runSearch();
+            });
+        });
+}
+
+function viewDepartments() {
+    var query = `SELECT * FROM department`;
+    connection.query(query, function (err, res) {
+        console.log("=======DEPARTMENTS=========")
+        console.table(res)
+        runSearch()
+    });
+}
+
+function addRole() {
+    connection.query("SELECT name FROM department", function (err, res) {
+        if (err) throw err;
+        const deptArr = []
+        res.forEach(index => {
+            deptArr.push(index.name)
+        })
+        inquirer
+            .prompt([
+                {
+                    name: "title",
+                    type: "input",
+                    message: "Add a role: "
+                },
+                {
+                    name: "salary",
+                    type: "input",
+                    message: "What is the salary for this role?"
+                },
+                {
+                    name: "department",
+                    type: "list",
+                    message: "Which Department?",
+                    choices: deptArr
+                }
+            ])
+            .then(function (answer) {
+                connection.query("SELECT id FROM department WHERE name = ?", answer.department, function (err, res) {
+                    if (err) throw err;
+                    var deptId = res[0].id
+                    var query = `INSERT INTO role(title,salary,department_id) VALUES(?,?,?)`;
+                    connection.query(query, [`${answer.title}`, answer.salary, deptId], function (err, res) {
+                        runSearch();
+                    });
+                })
+
+            });
+    })
+}
+
+function viewRoles() {
+    var query = `SELECT * FROM role`;
+    connection.query(query, function (err, res) {
+        console.log("=======Roles=========")
+        console.table(res)
+        runSearch()
+    });
+}
+
