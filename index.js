@@ -134,7 +134,8 @@ function addRole() {
 }
 
 function viewRoles() {
-    var query = `SELECT * FROM role`;
+    var query = `SELECT role.title, role.salary, department.name AS Department
+    FROM role INNER JOIN department ON (role.department_id = department.id)`;
     connection.query(query, function (err, res) {
         console.log("=======Roles=========")
         console.table(res)
@@ -150,14 +151,12 @@ function addEmployee() {
         res.forEach(index => {
             roleArr.push(index.title)
         })
-    })
-    connection.query("SELECT first_name, last_name FROM employee", function (err, res) {
-        if (err) throw err;
-        res.forEach(index => {
-            employeeArr.push(`${index.first_name} ${index.last_name}`)
-        })
-    })
-        inquirer
+        connection.query("SELECT first_name, last_name FROM employee", function (err, res) {
+            if (err) throw err;
+            res.forEach(index => {
+                employeeArr.push(`${index.first_name} ${index.last_name}`)
+            })
+            inquirer
             .prompt([
                 {
                     name: "firstName",
@@ -206,6 +205,10 @@ function addEmployee() {
                 })
 
             });
+        })
+    })
+    
+        
     
 }
 
