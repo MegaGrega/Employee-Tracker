@@ -55,7 +55,7 @@ function runSearch() {
                     break;
 
                 case "Add Employee":
-                    console.log("Branch Not Complete");
+                    addEmployee();
                     break;
 
                 case "View Employees":
@@ -142,3 +142,77 @@ function viewRoles() {
     });
 }
 
+function addEmployee() {
+    const roleArr = []
+    const employeeArr = ["None"]
+    connection.query("SELECT title FROM role", function (err, res) {
+        if (err) throw err;
+        res.forEach(index => {
+            roleArr.push(index.title)
+        })
+    })
+    connection.query("SELECT first_name, last_name FROM employee", function (err, res) {
+        if (err) throw err;
+        res.forEach(index => {
+            employeeArr.push(`${index.first_name} ${index.last_name}`)
+        })
+    })
+        inquirer
+            .prompt([
+                {
+                    name: "firstName",
+                    type: "input",
+                    message: "What is the Employee's First Name? "
+                },
+                {
+                    name: "lastName",
+                    type: "input",
+                    message: "What is the Employee's Last Name? "
+                },
+                {
+                    name: "role",
+                    type: "list",
+                    message: "What is their role?",
+                    choices: roleArr
+                },
+                {
+                    name: "manager",
+                    type: "list",
+                    message: "Who is their Manager?",
+                    choices: employeeArr
+                }
+            ])
+            .then(function (answer) {
+                connection.query("SELECT id FROM role WHERE title = ?", answer.role, function (err, res) {
+                    if (err) throw err;
+                    var roleId = (res[0].id)
+                    if  (answer.manager != "None"){
+                        const manager = answer.manager.split(' ')
+                        console.log(manager)
+                        connection.query("SELECT id FROM employee WHERE first_name = ? AND last_name = ?", [`${manager[0]}`,`${manager[1]}`], function (err, res) {
+                            if (err) throw err;
+                            var managerId = (res[0].id)
+                            console.log(managerId)
+                            connection.query("INSERT INTO employee(first_name, last_name, role_id,manager_id) VALUES(?,?,?,?)",[`${answer.firstName}`,`${answer.lastName}`,roleId,managerId], function (err, res) {
+                            })
+                            runSearch();
+                        })
+                    }else{
+                        connection.query("INSERT INTO employee(first_name, last_name, role_id) VALUES(?,?,?)",[`${answer.firstName}`,`${answer.lastName}`,roleId], function (err, res) {
+                        })
+                        runSearch();
+                    }
+                    
+                })
+                // connection.query("SELECT id FROM department WHERE name = ?", answer.department, function (err, res) {
+                //     if (err) throw err;
+                //     var deptId = res[0].id
+                //     var query = `INSERT INTO role(title,salary,department_id) VALUES(?,?,?)`;
+                //     connection.query(query, [`${answer.title}`, answer.salary, deptId], function (err, res) {
+                //         runSearch();
+                //     });
+                // })
+
+            });
+    
+}
