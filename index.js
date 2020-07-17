@@ -59,11 +59,11 @@ function runSearch() {
                     break;
 
                 case "View Employees":
-                    console.log("Branch Not Complete");
+                    viewEmployees();
                     break;
 
                 case "Update Employee Role":
-                    console.log("Branch Not Complete");
+                    updateRole();
                     break;
             }
         });
@@ -204,15 +204,62 @@ function addEmployee() {
                     }
                     
                 })
-                // connection.query("SELECT id FROM department WHERE name = ?", answer.department, function (err, res) {
-                //     if (err) throw err;
-                //     var deptId = res[0].id
-                //     var query = `INSERT INTO role(title,salary,department_id) VALUES(?,?,?)`;
-                //     connection.query(query, [`${answer.title}`, answer.salary, deptId], function (err, res) {
-                //         runSearch();
-                //     });
-                // })
 
             });
+    
+}
+
+function viewEmployees() {
+    var query = `SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, employee.manager_id AS Manager
+    FROM employee INNER JOIN role ON (employee.role_id = role.id);`;
+    connection.query(query, function (err, res) {
+        console.table(res)
+        runSearch()
+    });
+}
+
+function updateRole(){
+    const employeeArr = []
+    const roleArr = []
+    connection.query("SELECT first_name, last_name FROM employee", function (err, res) {
+        if (err) throw err;
+        res.forEach(index => {
+            employeeArr.push(`${index.first_name} ${index.last_name}`)
+            console.log(employeeArr)
+        })
+        connection.query("SELECT title FROM role", function (err, res) {
+            if (err) throw err;
+            res.forEach(index => {
+                roleArr.push(index.title)
+            })
+            inquirer
+            .prompt([
+                {
+                    name: "employee",
+                    type: "list",
+                    message: "Which employee's role do you want to update?",
+                    choices: employeeArr
+                },
+                {
+                    name: "role",
+                    type: "list",
+                    message: "What is their new role?",
+                    choices: roleArr
+                }
+            ])
+            .then(function (answer) {
+                connection.query("SELECT id FROM role WHERE title = ?", answer.role, function (err, res) {
+                    if (err) throw err;
+                    var roleId = (res[0].id)
+                    const employee = answer.employee.split(' ')
+                    connection.query("UPDATE employee SET role_id = ? WHERE first_name = ? AND last_name = ?;",[roleId, `${employee[0]}`,`${employee[1]}`], function (err, res) {
+                    })
+                    runSearch();
+                })
+
+            });
+        })
+    })
+    
     
 }
